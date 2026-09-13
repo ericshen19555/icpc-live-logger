@@ -10,6 +10,7 @@
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 system-ui,-apple-system,"Noto Sans TC",sans-serif; }
     main { width:min(980px,100%); margin:auto; padding:18px 14px 48px; }
+    header { display:flex; justify-content:space-between; align-items:flex-start; }
     h1 { margin:0 0 4px; font-size:1.5rem; } h2 { margin:0 0 10px; font-size:1.05rem; }
     .subtitle,.hint,#status { color:var(--muted); font-size:.9rem; } .status { min-height:1.3em; margin:8px 0; }
     section { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:14px; }
@@ -17,6 +18,9 @@
     button,select,input,textarea { font:inherit; }
     button { cursor:pointer; color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 11px; min-height:40px; }
     button:hover,button:focus-visible { border-color:var(--accent); outline:none; } button.primary { background:#245d99; border-color:#4f9ae5; } button.danger { color:#ffdbe0; border-color:#9d4a58; } button.selected { background:#275a8d; border-color:var(--accent); }
+    .btn-icon { width:40px; height:40px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+    .btn-icon svg { width:20px; height:20px; fill:currentColor; color:var(--muted); transition:color .15s ease; }
+    .btn-icon:hover svg,.btn-icon:focus-visible svg { color:var(--text); }
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(54px,1fr)); gap:7px; }
     .grid button { padding:7px 4px; } .type-grid { grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); }
     .detail { background:#151a23; border:1px dashed var(--line); border-radius:10px; padding:12px; margin-top:12px; }
@@ -32,7 +36,15 @@
 </head>
 <body>
 <main>
-  <header><h1>ICPC Live Logger</h1><div class="subtitle">離線、即時儲存、個人團練事件紀錄</div></header>
+  <header>
+    <div>
+      <h1>ICPC Live Logger</h1>
+      <div class="subtitle">離線、即時儲存、個人團練事件紀錄</div>
+    </div>
+    <button id="downloadSelfButton" type="button" class="btn-icon" title="下載 HTML 原始檔" aria-label="下載 HTML 原始檔">
+      <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    </button>
+  </header>
   <div id="status" class="status" aria-live="polite"></div>
 
   <section>
@@ -214,6 +226,17 @@
     const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})); link.download=`icpc-live-log-${stamp}.json`; link.click(); URL.revokeObjectURL(link.href); status(`已匯出 ${events.length} 筆事件。`);
   }
 
+  function downloadSelf() {
+    const content = '<!doctype html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'index.html';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    status('已下載 index.html。');
+  }
+
   $('problemGrid').addEventListener('click', e=>{const p=e.target.dataset.problem; if(p){selectedProblem=p; render();}});
   $('typeGrid').addEventListener('click', e=>{const type=e.target.dataset.type; if(type && selectedProblem) showDetail(selectedProblem,type);});
   $('globalGrid').addEventListener('click', e=>{const type=e.target.dataset.global; if(type) showDetail(null,type);});
@@ -226,6 +249,7 @@
   $('deleteButton').addEventListener('click',()=>{const e=state.events.find(x=>x.id===editingId); if(e){e.deleted=!e.deleted;persist();render();closeEditor();status(e.deleted?'已標記為刪除。':'已取消刪除標記。');}});
   $('editor').addEventListener('submit',e=>{e.preventDefault(); const event=state.events.find(x=>x.id===editingId); if(!event)return; const local=$('editTime').value; if(!local)return; event.timestamp=new Date(local).toISOString(); event.problem=$('editProblem').value||null; event.type=$('editType').value; event.detail=$('editDetail').value.trim(); event.language=$('editLanguage').value; event.verdict=$('editVerdict').value; event.note=$('editNote').value.trim(); persist();render();closeEditor();status('已儲存修改。');});
   $('exportButton').addEventListener('click',exportData);
+  $('downloadSelfButton').addEventListener('click',downloadSelf);
   $('clearButton').addEventListener('click',()=>{if(confirm('確定要清空此裝置的所有事件嗎？')) if(confirm('此動作無法復原，仍要清空嗎？')) {state.events=[];persist();render();status('已清空所有本機紀錄。');}});
   window.onbeforeunload=()=>undefined;
   render(); status(state.events.length ? '已從本機還原紀錄。' : '準備開始記錄。');
