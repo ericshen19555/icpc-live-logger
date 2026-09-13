@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131a">
+  <title>ICPC Live Logger</title>
+  <style>
+    :root { color-scheme: dark; --bg:#10131a; --panel:#191e29; --panel2:#222a38; --line:#394254; --text:#f0f3fa; --muted:#aab4c5; --accent:#75b8ff; --good:#66d6a5; --danger:#ff8893; --warn:#f4c86b; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 system-ui,-apple-system,"Noto Sans TC",sans-serif; }
+    main { width:min(980px,100%); margin:auto; padding:18px 14px 48px; }
+    h1 { margin:0 0 4px; font-size:1.5rem; } h2 { margin:0 0 10px; font-size:1.05rem; }
+    .subtitle,.hint,#status { color:var(--muted); font-size:.9rem; } .status { min-height:1.3em; margin:8px 0; }
+    section { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:14px; }
+    .row { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+    button,select,input,textarea { font:inherit; }
+    button { cursor:pointer; color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 11px; min-height:40px; }
+    button:hover,button:focus-visible { border-color:var(--accent); outline:none; } button.primary { background:#245d99; border-color:#4f9ae5; } button.danger { color:#ffdbe0; border-color:#9d4a58; } button.selected { background:#275a8d; border-color:var(--accent); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(54px,1fr)); gap:7px; }
+    .grid button { padding:7px 4px; } .type-grid { grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); }
+    .detail { background:#151a23; border:1px dashed var(--line); border-radius:10px; padding:12px; margin-top:12px; }
+    label { display:grid; gap:5px; color:var(--muted); font-size:.86rem; } input,select,textarea { color:var(--text); background:#111620; border:1px solid var(--line); border-radius:7px; padding:8px; min-height:38px; } textarea { min-height:76px; resize:vertical; }
+    .two { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .three { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .hidden { display:none!important; }
+    .table-wrap { overflow-x:auto; } table { width:100%; border-collapse:collapse; min-width:580px; } th,td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); } th button { padding:3px 5px; min-height:auto; border:0; background:none; color:var(--accent); } tr.event-row { cursor:pointer; } tr.event-row:hover { background:#202837; } tr.deleted { color:var(--muted); text-decoration:line-through; }
+    .event-kind { color:var(--accent); } .empty { text-align:center; color:var(--muted); padding:20px; }
+    .modal-backdrop { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:14px; background:#000a; z-index:10; } .modal { width:min(600px,100%); max-height:92vh; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; } .modal h2 { margin-bottom:14px; }
+    .modal .row { justify-content:flex-end; margin-top:14px; } .modal .danger { margin-right:auto; }
+    @media (max-width:560px) { main { padding:12px 9px 30px; } section { padding:12px; } .two,.three { grid-template-columns:1fr; } .type-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  </style>
+</head>
+<body>
+<main>
+  <header><h1>ICPC Live Logger</h1><div class="subtitle">離線、即時儲存、個人團練事件紀錄</div></header>
+  <div id="status" class="status" aria-live="polite"></div>
+
+  <section>
+    <h2>1. 選擇題目</h2>
+    <div id="problemGrid" class="grid" aria-label="題目"></div>
+    <div class="hint">選擇題目後再選事件；全域事件不需要題號。</div>
+  </section>
+
+  <section>
+    <h2>2. 記錄事件</h2>
+    <div id="typeGrid" class="grid type-grid"></div>
+    <div class="row" style="margin-top:10px"><span class="hint">全域：</span><div id="globalGrid" class="row"></div></div>
+    <div id="detailPanel" class="detail hidden"></div>
+  </section>
+
+  <section>
+    <div class="row" style="justify-content:space-between"><h2>事件預覽</h2><span id="eventCount" class="hint"></span></div>
+    <div class="table-wrap"><table><thead><tr><th><button id="timeMode" title="切換全表時間顯示">時間：絕對</button></th><th>題號・事件類型</th><th>細項</th></tr></thead><tbody id="eventList"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>匯出與資料管理</h2>
+    <div class="two">
+      <label>開始事件<select id="exportStart"></select></label>
+      <label>結束事件<select id="exportEnd"></select></label>
+    </div>
+    <div class="row" style="margin-top:12px"><button id="exportButton" class="primary">匯出 JSON Data</button><button id="clearButton" class="danger">清空所有本機紀錄</button></div>
+    <div class="hint" style="margin-top:8px">匯出包含已刪除事件。匯出不會清除本機資料。</div>
+  </section>
+</main>
+
+<div id="editorBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+  <form id="editor" class="modal">
+    <h2 id="editorTitle">編輯事件</h2>
+    <div class="two">
+      <label>時間<input id="editTime" type="datetime-local" step="1" required></label>
+      <label>題號<select id="editProblem"></select></label>
+      <label>事件類型<select id="editType"></select></label>
+      <label>細項<input id="editDetail" placeholder="可留空"></label>
+      <label id="languageLabel" class="hidden">提交語言<select id="editLanguage"><option value="">未填寫</option><option>C++</option><option>Python</option><option>其他</option></select></label>
+      <label id="verdictLabel" class="hidden">判定結果<select id="editVerdict"><option value="">未填寫</option><option>AC</option><option>WA</option><option>TLE</option><option>RE</option><option>MLE</option><option>CE</option></select></label>
+    </div>
+    <label style="margin-top:10px">備註<textarea id="editNote" placeholder="可留空"></textarea></label>
+    <div class="row"><button id="deleteButton" class="danger" type="button">標記為刪除</button><button id="cancelEdit" type="button">取消</button><button class="primary" type="submit">儲存修改</button></div>
+  </form>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const KEY = 'icpc-live-logger-v1';
+  const PROBLEMS = Array.from({length:26}, (_, i) => `p${String.fromCharCode(65+i)}`);
+  const TYPES = {
+    read: {label:'讀題', details:['首次讀題','重讀','看限制與範例']},
+    think: {label:'想解法', details:['發想','推導','驗證','卡住']},
+    solved: {label:'想出解法', details:['找到方向','完成證明或複雜度確認']},
+    coding: {label:'實作', details:['C++','Python','其他']},
+    testing: {label:'測試', details:['樣測','自訂測資','壓力測試']},
+    debug: {label:'除錯', details:['編譯','邏輯','輸入輸出','效能','未知']},
+    discuss: {label:'討論', details:['討論解法','求助','同步']},
+    pause: {label:'暫停處理', details:['先擱置','放棄']},
+    submit: {label:'提交', details:[]},
+    custom_problem: {label:'自訂題目事件', details:[]},
+    contest_start: {label:'開始比賽', details:[], global:true},
+    contest_end: {label:'結束比賽', details:[], global:true},
+    away: {label:'中離', details:[], global:true},
+    custom_global: {label:'自訂全域事件', details:[], global:true}
+  };
+  let state = load();
+  let selectedProblem = null;
+  let draft = null;
+  let relativeMode = false;
+  let editingId = null;
+  const $ = id => document.getElementById(id);
+  const status = message => { $('status').textContent = message; };
+
+  function load() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY));
+      if (saved && Array.isArray(saved.events)) return {version:1, events:saved.events};
+    } catch (_) { /* start fresh if corrupted */ }
+    return {version:1, events:[]};
+  }
+  function persist() {
+    const trySave = () => localStorage.setItem(KEY, JSON.stringify(state));
+    try { trySave(); return; }
+    catch (_) {
+      state.events.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+      while (state.events.length) {
+        state.events.shift();
+        try { trySave(); status('空間不足，已移除最舊事件後儲存。'); return; } catch (_) { /* keep trimming */ }
+      }
+      status('無法寫入本機儲存空間。');
+    }
+  }
+  function nowISO() { return new Date().toISOString(); }
+  function uid() { return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+  function labelFor(type) { return TYPES[type]?.label || type; }
+  function makeEvent({problem, type, detail='', note='', language='', verdict=''}) {
+    state.events.push({id:uid(), timestamp:nowISO(), problem:problem || null, type, detail, note, deleted:false, language, verdict});
+    persist(); render();
+  }
+  function sortedEvents() { return [...state.events].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); }
+  function localInputValue(iso) {
+    const d = new Date(iso); const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+  function absoluteTime(iso) { return new Intl.DateTimeFormat('zh-TW',{hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(iso)); }
+  function relativeTime(event) {
+    const activeStarts = state.events.filter(e => !e.deleted && e.type === 'contest_start').sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp));
+    if (!activeStarts.length) return absoluteTime(event.timestamp);
+    const time = new Date(event.timestamp).getTime();
+    const prior = activeStarts.filter(e => new Date(e.timestamp).getTime() <= time).pop();
+    const anchor = prior || activeStarts.find(e => new Date(e.timestamp).getTime() > time);
+    const sec = Math.round((time - new Date(anchor.timestamp).getTime()) / 1000);
+    const sign = sec < 0 ? '-' : '+'; const n = Math.abs(sec);
+    return `${sign}${String(Math.floor(n/3600)).padStart(2,'0')}:${String(Math.floor(n%3600/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+  }
+  function detailText(e) {
+    const extras = [];
+    if (e.detail) extras.push(e.detail);
+    if (e.type === 'submit') { if (e.language) extras.push(e.language); if (e.verdict) extras.push(e.verdict); }
+    if (e.note) extras.push(`備註：${e.note}`);
+    return extras.join(' ・ ') || '—';
+  }
+  function renderProblemGrid() {
+    $('problemGrid').innerHTML = PROBLEMS.map(p => `<button type="button" data-problem="${p}" class="${selectedProblem===p?'selected':''}">${p}</button>`).join('');
+  }
+  function renderTypes() {
+    const typeKeys = Object.keys(TYPES).filter(k => !TYPES[k].global);
+    $('typeGrid').innerHTML = typeKeys.map(k => `<button type="button" data-type="${k}" ${selectedProblem?'':'disabled'}>${TYPES[k].label}</button>`).join('');
+    $('globalGrid').innerHTML = Object.keys(TYPES).filter(k => TYPES[k].global).map(k => `<button type="button" data-global="${k}">${TYPES[k].label}</button>`).join('');
+  }
+  function renderEvents() {
+    const events = sortedEvents();
+    $('eventCount').textContent = `${events.length} 筆`;
+    $('timeMode').textContent = `時間：${relativeMode ? '相對' : '絕對'}`;
+    $('eventList').innerHTML = events.length ? events.map(e => `<tr class="event-row ${e.deleted?'deleted':''}" data-id="${e.id}"><td>${relativeMode ? relativeTime(e) : absoluteTime(e.timestamp)}</td><td>${e.problem ? `${e.problem} ・ ` : ''}<span class="event-kind">${labelFor(e.type)}</span></td><td>${escapeHtml(detailText(e))}</td></tr>`).join('') : '<tr><td class="empty" colspan="3">尚無紀錄</td></tr>';
+  }
+  function escapeHtml(value) { const d=document.createElement('div'); d.textContent=value; return d.innerHTML; }
+  function eventOption(e) { return `${absoluteTime(e.timestamp)} · ${labelFor(e.type)}${e.detail ? ` · ${e.detail}` : ''}`; }
+  function renderExportSelects() {
+    const starts = state.events.filter(e => !e.deleted && e.type==='contest_start').sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+    const ends = state.events.filter(e => !e.deleted && e.type==='contest_end').sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+    const previousStart=$('exportStart').value, previousEnd=$('exportEnd').value;
+    $('exportStart').innerHTML = '<option value="__today__">當日所有事件（預設備用）</option>' + starts.map(e=>`<option value="${e.id}">${escapeHtml(eventOption(e))}</option>`).join('');
+    $('exportEnd').innerHTML = '<option value="__today__">當日所有事件（預設備用）</option>' + ends.map(e=>`<option value="${e.id}">${escapeHtml(eventOption(e))}</option>`).join('');
+    const pairs=[]; for (const start of starts) { const end=ends.find(e=>new Date(e.timestamp)>new Date(start.timestamp)); if (end) pairs.push({start,end}); }
+    const last=pairs[pairs.length-1];
+    $('exportStart').value = starts.some(e=>e.id===previousStart) ? previousStart : (last ? last.start.id : '__today__');
+    $('exportEnd').value = ends.some(e=>e.id===previousEnd) ? previousEnd : (last ? last.end.id : '__today__');
+  }
+  function render() { renderProblemGrid(); renderTypes(); renderEvents(); renderExportSelects(); }
+  function showDetail(problem, type) {
+    draft={problem,type}; const def=TYPES[type]; const panel=$('detailPanel'); panel.classList.remove('hidden');
+    const choices=def.details.map(x=>`<button type="button" data-detail="${x}">${x}</button>`).join('');
+    const custom=type.startsWith('custom') ? '<label>自訂事件名稱<input id="customDetail" placeholder="可留空"></label>' : '';
+    const submit=type==='submit' ? '<div class="two"><label>語言<select id="draftLanguage"><option value="">未填寫</option><option>C++</option><option>Python</option><option>其他</option></select></label><label>判定<select id="draftVerdict"><option value="">未填寫</option><option>AC</option><option>WA</option><option>TLE</option><option>RE</option><option>MLE</option><option>CE</option></select></label></div>' : '';
+    panel.innerHTML=`<strong>${problem ? `${problem} ・ ` : ''}${def.label}</strong><div class="hint">可選細項，或直接跳過儲存。事件時間將預填為現在，之後可從列表修改。</div>${choices ? `<div class="row" style="margin-top:10px">${choices}</div>` : ''}<div style="margin-top:10px">${submit}${custom}<label style="margin-top:10px">備註<input id="draftNote" placeholder="可留空"></label></div><div class="row" style="margin-top:10px"><button type="button" id="skipDetail" class="primary">跳過細項並儲存</button><button type="button" id="cancelDraft">取消</button></div>`;
+  }
+  function saveDraft(detail='') { if (!draft) return; makeEvent({ ...draft, detail, note:$('draftNote')?.value.trim() || '', language:$('draftLanguage')?.value || '', verdict:$('draftVerdict')?.value || '' }); $('detailPanel').classList.add('hidden'); draft=null; status('已儲存事件。'); }
+  function openEditor(id) {
+    const e=state.events.find(x=>x.id===id); if (!e) return; editingId=id;
+    $('editTime').value=localInputValue(e.timestamp); $('editProblem').innerHTML='<option value="">無題號（全域）</option>'+PROBLEMS.map(p=>`<option>${p}</option>`).join(''); $('editProblem').value=e.problem||'';
+    $('editType').innerHTML=Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join(''); $('editType').value=e.type; $('editDetail').value=e.detail||''; $('editLanguage').value=e.language||''; $('editVerdict').value=e.verdict||''; $('editNote').value=e.note||'';
+    $('deleteButton').textContent=e.deleted ? '取消刪除標記' : '標記為刪除'; toggleSubmitFields(); $('editorBackdrop').classList.remove('hidden');
+  }
+  function toggleSubmitFields() { const show=$('editType').value==='submit'; $('languageLabel').classList.toggle('hidden',!show); $('verdictLabel').classList.toggle('hidden',!show); }
+  function closeEditor() { $('editorBackdrop').classList.add('hidden'); editingId=null; }
+  function todayBounds() { const d=new Date(), start=new Date(d.getFullYear(),d.getMonth(),d.getDate()), end=new Date(start); end.setDate(end.getDate()+1); return [start,end]; }
+  function exportData() {
+    const get=id=>state.events.find(e=>e.id===id); let from,to;
+    const start=get($('exportStart').value), end=get($('exportEnd').value);
+    if (start && end) { from=new Date(start.timestamp); to=new Date(end.timestamp); if (to<from) { status('結束事件必須晚於開始事件。'); return; } }
+    else [from,to]=todayBounds();
+    const events=state.events.filter(e=>{const t=new Date(e.timestamp); return t>=from && t<=to;}).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+    const payload={version:1, exportedAt:nowISO(), range:{from:from.toISOString(),to:to.toISOString()}, events};
+    const stamp=localInputValue(nowISO()).replace('T','_').replace(/:/g,'').slice(0,13);
+    const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})); link.download=`icpc-live-log-${stamp}.json`; link.click(); URL.revokeObjectURL(link.href); status(`已匯出 ${events.length} 筆事件。`);
+  }
+
+  $('problemGrid').addEventListener('click', e=>{const p=e.target.dataset.problem; if(p){selectedProblem=p; render();}});
+  $('typeGrid').addEventListener('click', e=>{const type=e.target.dataset.type; if(type && selectedProblem) showDetail(selectedProblem,type);});
+  $('globalGrid').addEventListener('click', e=>{const type=e.target.dataset.global; if(type) showDetail(null,type);});
+  $('detailPanel').addEventListener('click', e=>{ if(e.target.dataset.detail) saveDraft(e.target.dataset.detail); if(e.target.id==='skipDetail') saveDraft($('customDetail')?.value.trim()||''); if(e.target.id==='cancelDraft'){draft=null;$('detailPanel').classList.add('hidden');} });
+  $('timeMode').addEventListener('click',()=>{relativeMode=!relativeMode;renderEvents();});
+  $('eventList').addEventListener('click',e=>{const row=e.target.closest('[data-id]'); if(row) openEditor(row.dataset.id);});
+  $('editType').addEventListener('change',toggleSubmitFields);
+  $('cancelEdit').addEventListener('click',closeEditor);
+  $('editorBackdrop').addEventListener('click', e=>{ if (e.target === $('editorBackdrop')) closeEditor(); });
+  $('deleteButton').addEventListener('click',()=>{const e=state.events.find(x=>x.id===editingId); if(e){e.deleted=!e.deleted;persist();render();closeEditor();status(e.deleted?'已標記為刪除。':'已取消刪除標記。');}});
+  $('editor').addEventListener('submit',e=>{e.preventDefault(); const event=state.events.find(x=>x.id===editingId); if(!event)return; const local=$('editTime').value; if(!local)return; event.timestamp=new Date(local).toISOString(); event.problem=$('editProblem').value||null; event.type=$('editType').value; event.detail=$('editDetail').value.trim(); event.language=$('editLanguage').value; event.verdict=$('editVerdict').value; event.note=$('editNote').value.trim(); persist();render();closeEditor();status('已儲存修改。');});
+  $('exportButton').addEventListener('click',exportData);
+  $('clearButton').addEventListener('click',()=>{if(confirm('確定要清空此裝置的所有事件嗎？')) if(confirm('此動作無法復原，仍要清空嗎？')) {state.events=[];persist();render();status('已清空所有本機紀錄。');}});
+  window.onbeforeunload=()=>undefined;
+  render(); status(state.events.length ? '已從本機還原紀錄。' : '準備開始記錄。');
+})();
+</script>
+</body>
+</html>
