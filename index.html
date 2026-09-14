@@ -50,13 +50,12 @@
   <section>
     <h2>1. 選擇題目</h2>
     <div id="problemGrid" class="grid" aria-label="題目"></div>
-    <div class="hint">選擇題目後再選事件；全域事件不需要題號。</div>
   </section>
 
   <section>
     <h2>2. 記錄事件</h2>
     <div id="typeGrid" class="grid type-grid"></div>
-    <div class="row" style="margin-top:10px"><span class="hint">全域：</span><div id="globalGrid" class="row"></div></div>
+    <div class="row" style="margin-top:10px"><span class="hint">通用：</span><div id="generalGrid" class="row"></div></div>
     <div id="detailPanel" class="detail hidden"></div>
   </section>
 
@@ -96,7 +95,7 @@
 (() => {
   'use strict';
   const KEY = 'icpc-live-logger-v1';
-  const PROBLEMS = Array.from({length:26}, (_, i) => `p${String.fromCharCode(65+i)}`);
+  const PROBLEMS = ['General', ...Array.from({length:26}, (_, i) => `p${String.fromCharCode(65+i)}`)];
   const TYPES = {
     read: {label:'讀題', details:['首次讀題','重讀','看限制與範例']},
     think: {label:'想解法', details:['發想','推導','驗證','卡住']},
@@ -108,13 +107,13 @@
     pause: {label:'暫停處理', details:['先擱置','放棄']},
     submit: {label:'提交', details:[]},
     custom_problem: {label:'自訂題目事件', details:[]},
-    contest_start: {label:'開始比賽', details:[], global:true},
-    contest_end: {label:'結束比賽', details:[], global:true},
-    away: {label:'中離', details:[], global:true},
-    custom_global: {label:'自訂全域事件', details:[], global:true}
+    contest_start: {label:'開始比賽', details:[], general:true},
+    contest_end: {label:'結束比賽', details:[], general:true},
+    away: {label:'中離', details:[], general:true},
+    custom_general: {label:'自訂通用事件', details:[], general:true}
   };
   let state = load();
-  let selectedProblem = null;
+  let selectedProblem = 'General';
   let draft = null;
   let relativeMode = false;
   let editingId = null;
@@ -144,7 +143,7 @@
   function uid() { return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
   function labelFor(type) { return TYPES[type]?.label || type; }
   function makeEvent({problem, type, detail='', note='', language='', verdict=''}) {
-    state.events.push({id:uid(), timestamp:nowISO(), problem:problem || null, type, detail, note, deleted:false, language, verdict});
+    state.events.push({id:uid(), timestamp:nowISO(), problem:problem || 'General', type, detail, note, deleted:false, language, verdict});
     persist(); render();
   }
   function sortedEvents() { return [...state.events].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)); }
@@ -171,12 +170,16 @@
     return extras.join(' ・ ') || '—';
   }
   function renderProblemGrid() {
-    $('problemGrid').innerHTML = PROBLEMS.map(p => `<button type="button" data-problem="${p}" class="${selectedProblem===p?'selected':''}">${p}</button>`).join('');
+    $('problemGrid').innerHTML = PROBLEMS.map(p => {
+      const isGen = p === 'General';
+      const label = isGen ? '*' : p;
+      return `<button type="button" data-problem="${p}" class="${selectedProblem===p?'selected':''}" ${isGen ? 'title="通用"' : ''}>${label}</button>`;
+    }).join('');
   }
   function renderTypes() {
-    const typeKeys = Object.keys(TYPES).filter(k => !TYPES[k].global);
+    const typeKeys = Object.keys(TYPES).filter(k => !TYPES[k].general);
     $('typeGrid').innerHTML = typeKeys.map(k => `<button type="button" data-type="${k}" ${selectedProblem?'':'disabled'}>${TYPES[k].label}</button>`).join('');
-    $('globalGrid').innerHTML = Object.keys(TYPES).filter(k => TYPES[k].global).map(k => `<button type="button" data-global="${k}">${TYPES[k].label}</button>`).join('');
+    $('generalGrid').innerHTML = Object.keys(TYPES).filter(k => TYPES[k].general).map(k => `<button type="button" data-general="${k}">${TYPES[k].label}</button>`).join('');
   }
   function renderEvents() {
     const events = sortedEvents();
@@ -208,7 +211,9 @@
   function saveDraft(detail='') { if (!draft) return; makeEvent({ ...draft, detail, note:$('draftNote')?.value.trim() || '', language:$('draftLanguage')?.value || '', verdict:$('draftVerdict')?.value || '' }); $('detailPanel').classList.add('hidden'); draft=null; status('已儲存事件。'); }
   function openEditor(id) {
     const e=state.events.find(x=>x.id===id); if (!e) return; editingId=id;
-    $('editTime').value=localInputValue(e.timestamp); $('editProblem').innerHTML='<option value="">無題號（全域）</option>'+PROBLEMS.map(p=>`<option>${p}</option>`).join(''); $('editProblem').value=e.problem||'';
+    $('editTime').value=localInputValue(e.timestamp); 
+    $('editProblem').innerHTML=PROBLEMS.map(p=>`<option value="${p}">${p}</option>`).join('');
+    $('editProblem').value=e.problem||'General';
     $('editType').innerHTML=Object.entries(TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join(''); $('editType').value=e.type; $('editDetail').value=e.detail||''; $('editLanguage').value=e.language||''; $('editVerdict').value=e.verdict||''; $('editNote').value=e.note||'';
     $('deleteButton').textContent=e.deleted ? '取消刪除標記' : '標記為刪除'; toggleSubmitFields(); $('editorBackdrop').classList.remove('hidden');
   }
@@ -239,7 +244,15 @@
 
   $('problemGrid').addEventListener('click', e=>{const p=e.target.dataset.problem; if(p){selectedProblem=p; render();}});
   $('typeGrid').addEventListener('click', e=>{const type=e.target.dataset.type; if(type && selectedProblem) showDetail(selectedProblem,type);});
-  $('globalGrid').addEventListener('click', e=>{const type=e.target.dataset.global; if(type) showDetail(null,type);});
+  $('generalGrid').addEventListener('click', e=>{
+    const type=e.target.dataset.general; 
+    if(type) {
+      selectedProblem = 'General';
+      renderProblemGrid();
+      renderTypes();
+      showDetail('General', type);
+    }
+  });
   $('detailPanel').addEventListener('click', e=>{ if(e.target.dataset.detail) saveDraft(e.target.dataset.detail); if(e.target.id==='skipDetail') saveDraft($('customDetail')?.value.trim()||''); if(e.target.id==='cancelDraft'){draft=null;$('detailPanel').classList.add('hidden');} });
   $('timeMode').addEventListener('click',()=>{relativeMode=!relativeMode;renderEvents();});
   $('eventList').addEventListener('click',e=>{const row=e.target.closest('[data-id]'); if(row) openEditor(row.dataset.id);});
@@ -247,7 +260,7 @@
   $('cancelEdit').addEventListener('click',closeEditor);
   $('editorBackdrop').addEventListener('click', e=>{ if (e.target === $('editorBackdrop')) closeEditor(); });
   $('deleteButton').addEventListener('click',()=>{const e=state.events.find(x=>x.id===editingId); if(e){e.deleted=!e.deleted;persist();render();closeEditor();status(e.deleted?'已標記為刪除。':'已取消刪除標記。');}});
-  $('editor').addEventListener('submit',e=>{e.preventDefault(); const event=state.events.find(x=>x.id===editingId); if(!event)return; const local=$('editTime').value; if(!local)return; event.timestamp=new Date(local).toISOString(); event.problem=$('editProblem').value||null; event.type=$('editType').value; event.detail=$('editDetail').value.trim(); event.language=$('editLanguage').value; event.verdict=$('editVerdict').value; event.note=$('editNote').value.trim(); persist();render();closeEditor();status('已儲存修改。');});
+  $('editor').addEventListener('submit',e=>{e.preventDefault(); const event=state.events.find(x=>x.id===editingId); if(!event)return; const local=$('editTime').value; if(!local)return; event.timestamp=new Date(local).toISOString(); event.problem=$('editProblem').value||'General'; event.type=$('editType').value; event.detail=$('editDetail').value.trim(); event.language=$('editLanguage').value; event.verdict=$('editVerdict').value; event.note=$('editNote').value.trim(); persist();render();closeEditor();status('已儲存修改。');});
   $('exportButton').addEventListener('click',exportData);
   $('downloadSelfButton').addEventListener('click',downloadSelf);
   $('clearButton').addEventListener('click',()=>{if(confirm('確定要清空此裝置的所有事件嗎？')) if(confirm('此動作無法復原，仍要清空嗎？')) {state.events=[];persist();render();status('已清空所有本機紀錄。');}});
