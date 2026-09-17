@@ -521,6 +521,16 @@
     }
   });
 
+  $('editor').addEventListener('keydown', e => {
+    if (e.isComposing) return;
+    const isMac = navigator.userAgent.includes('Mac');
+    const hasModifier = isMac ? e.metaKey : e.ctrlKey;
+    if (hasModifier && e.key === 'Enter') {
+      e.preventDefault();
+      $('editor').requestSubmit();
+    }
+  });
+
   $('deleteButton').addEventListener('click',()=>{const e=state.events.find(x=>x.id===editingId); if(e){e.deleted=!e.deleted;persist();render();closeEditor();status(e.deleted?'已標記為刪除。':'已取消刪除標記。');}});
   $('editor').addEventListener('submit',e=>{
     e.preventDefault();
