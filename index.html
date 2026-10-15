@@ -75,12 +75,18 @@
       100% { background-position: 100% 100%; filter: hue-rotate(360deg); }
     }
 
+    .page-actions { flex-wrap:nowrap; }
+    .page-actions .page-tab { min-height:40px; }
+    .page-hidden { display:none!important; }
+
     @media (max-width:560px) { main { padding:12px 9px 30px; } section { padding:12px; } .two { grid-template-columns:1fr; } .type-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     #visualizerPage > main > header { display:block; position:relative; }
     #visualizerPage .page-actions { position:absolute; top:0; right:0; flex-wrap:nowrap; }
     #visualizerPage .page-download { width:38px; height:38px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
     #visualizerPage .page-download svg { width:20px; height:20px; fill:currentColor; color:var(--muted); }
     @media (max-width:560px) {
+      #loggerPage > header { flex-wrap:wrap; }
+      #loggerPage > header .page-actions { margin-left:auto; }
       #visualizerPage > main > header { padding-bottom:42px; }
       #visualizerPage .page-actions { top:auto; bottom:0; }
     }
@@ -556,15 +562,19 @@
   </style>
 </head>
 <body>
-<main>
+<main id="loggerPage">
   <header>
     <div>
       <h1>ICPC Live Logger</h1>
       <div class="subtitle">離線、即時儲存、個人團練事件紀錄</div>
     </div>
+    <div class="row page-actions" aria-label="頁面切換與下載">
+      <button type="button" class="page-tab" data-page="logger">Logger</button>
+      <button type="button" class="page-tab" data-page="visualizer">Visualizer</button>
     <button id="downloadSelfButton" type="button" class="btn-icon" title="下載 HTML 原始檔" aria-label="下載 HTML 原始檔">
       <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
     </button>
+    </div>
   </header>
   <div id="status" class="status" aria-live="polite"></div>
 
@@ -595,9 +605,9 @@
   </section>
 </main>
 
-<div id="visualizerPage">
+<div id="visualizerPage" class="page-hidden">
 <main>
-  <header><h1>ICPC Contest Visualizer</h1><div class="muted">拖入三份隊員紀錄與 Codeforces 或 QOJ submissions JSON</div><div class="row page-actions"><button id="visualizerDownloadButton" type="button" class="page-tab page-download" title="下載 HTML 原始檔" aria-label="下載 HTML 原始檔"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button></div></header>
+  <header><h1>ICPC Contest Visualizer</h1><div class="muted">拖入三份隊員紀錄與 Codeforces 或 QOJ submissions JSON</div><div class="row page-actions"><button type="button" class="page-tab" data-page="logger">Logger</button><button type="button" class="page-tab" data-page="visualizer">Visualizer</button><button id="visualizerDownloadButton" type="button" class="page-tab page-download" title="下載 HTML 原始檔" aria-label="下載 HTML 原始檔"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button></div></header>
   <section>
     <div class="row">
       <div id="drop" class="drop" tabindex="0">拖放 JSON 檔案到這裡<br>或 <button id="choose" type="button">開啟檔案視窗</button><input id="files" class="hidden" type="file" accept=".json,application/json" multiple></div><button id="reset" type="button">清除已載入檔案</button>
@@ -1203,6 +1213,34 @@
   $('clearButton').addEventListener('click',()=>{if(confirm('確定要清空此裝置的所有事件嗎？')) if(confirm('此動作無法復原，仍要清空嗎？')) {state.events=[];persist();render();status('已清空所有本機紀錄。');}});
   window.onbeforeunload=()=>undefined;
   render(); status(state.events.length ? '已從本機還原紀錄。' : '準備開始記錄。');
+})();
+</script>
+<script>
+(() => {
+  const pages = { logger: document.getElementById('loggerPage'), visualizer: document.getElementById('visualizerPage') };
+  const tabs = [...document.querySelectorAll('[data-page]')];
+  const pageNames = new Set(['logger', 'visualizer']);
+
+  function renderRoute() {
+    const requested = location.hash.slice(1);
+    const page = pageNames.has(requested) ? requested : 'logger';
+    pages.logger.classList.toggle('page-hidden', page !== 'logger');
+    pages.visualizer.classList.toggle('page-hidden', page !== 'visualizer');
+    tabs.forEach(tab => {
+      const selected = tab.dataset.page === page;
+      tab.classList.toggle('selected', selected);
+      tab.setAttribute('aria-current', selected ? 'page' : 'false');
+    });
+    document.title = page === 'visualizer' ? 'ICPC Contest Visualizer' : 'ICPC Live Logger';
+  }
+
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    const nextHash = `#${tab.dataset.page}`;
+    if (location.hash !== nextHash) location.hash = nextHash;
+    else renderRoute();
+  }));
+  window.addEventListener('hashchange', renderRoute);
+  renderRoute();
 })();
 </script>
 <script>
