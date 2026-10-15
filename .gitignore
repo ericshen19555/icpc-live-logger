@@ -8,3 +8,7 @@ Desktop.ini
 .idea/
 *.swp
 *~
+
+logs/
+.qoj_credentials.json
+.cf_last_team
