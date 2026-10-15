@@ -76,6 +76,483 @@
     }
 
     @media (max-width:560px) { main { padding:12px 9px 30px; } section { padding:12px; } .two { grid-template-columns:1fr; } .type-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    #visualizerPage > main > header { display:block; position:relative; }
+    #visualizerPage .page-actions { position:absolute; top:0; right:0; flex-wrap:nowrap; }
+    #visualizerPage .page-download { width:38px; height:38px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+    #visualizerPage .page-download svg { width:20px; height:20px; fill:currentColor; color:var(--muted); }
+    @media (max-width:560px) {
+      #visualizerPage > main > header { padding-bottom:42px; }
+      #visualizerPage .page-actions { top:auto; bottom:0; }
+    }
+    /* Visualizer styles are scoped to its page to preserve both original layouts. */
+#visualizerPage {
+  color-scheme:dark;
+  --bg:#10131a;
+  --panel:#191e29;
+  --panel2:#222a38;
+  --line:#394254;
+  --text:#f0f3fa;
+  --muted:#aab4c5;
+  --accent:#75b8ff;
+  --good:#66d6a5;
+  --danger:#ff8893;
+  --warn:#f4c86b;
+  --hour:180px;
+}
+#visualizerPage * {
+  box-sizing:border-box;
+}
+#visualizerPage {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:15px/1.45 system-ui,-apple-system,"Noto Sans TC",sans-serif;
+}
+#visualizerPage main {
+  width:auto;
+  max-width:1500px;
+  margin:auto;
+  padding:18px 14px 42px;
+}
+#visualizerPage h1 {
+  font-size:1.5rem;
+  margin:0;
+}
+#visualizerPage h2 {
+  font-size:1.05rem;
+  margin:0 0 10px;
+}
+#visualizerPage .muted,
+#visualizerPage .hint {
+  color:var(--muted);
+  font-size:.88rem;
+}
+#visualizerPage section {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  margin-top:13px;
+}
+#visualizerPage .row {
+  display:flex;
+  gap:9px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+#visualizerPage button,
+#visualizerPage input {
+  font:inherit;
+}
+#visualizerPage button {
+  cursor:pointer;
+  color:var(--text);
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:7px 11px;
+  min-height:38px;
+}
+#visualizerPage button:hover,
+#visualizerPage button:focus-visible {
+  border-color:var(--accent);
+  outline:none;
+}
+#visualizerPage button.selected {
+  background:#275a8d;
+  border-color:var(--accent);
+}
+#visualizerPage button:disabled {
+  cursor:not-allowed;
+  opacity:.32;
+  filter:grayscale(1);
+}
+#visualizerPage input {
+  color:var(--text);
+  background:#111620;
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:7px;
+  min-height:36px;
+}
+#visualizerPage label {
+  display:grid;
+  gap:4px;
+  color:var(--muted);
+  font-size:.84rem;
+}
+#visualizerPage .toolbar {
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:rgba(16,19,26,.96);
+  backdrop-filter:blur(8px);
+  padding:9px;
+}
+#visualizerPage .problem-filter {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(54px,1fr));
+  gap:7px;
+}
+#visualizerPage .problem-filter button {
+  padding:7px 4px;
+  min-height:40px;
+}
+#visualizerPage .event-filter {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(132px,1fr));
+  gap:7px;
+}
+#visualizerPage .event-filter button {
+  padding:7px 4px;
+  min-height:40px;
+}
+#visualizerPage .toolbar {
+  font:16px/1.45 system-ui,-apple-system,"Noto Sans TC",sans-serif;
+}
+#visualizerPage .toolbar .hint {
+  font-size:.9rem;
+}
+#visualizerPage #eventGeneralFilter button {
+  padding:8px 11px;
+  min-height:40px;
+}
+#visualizerPage #eventGeneralFilter button[data-general="all_ac"] {
+  position:relative;
+  z-index:1;
+  border:1px solid transparent;
+  overflow:hidden;
+  transition:border-color .4s ease,transform .2s ease;
+}
+#visualizerPage #eventGeneralFilter button[data-general="all_ac"]::before {
+  content:"";
+  position:absolute;
+  inset:-3px;
+  z-index:-2;
+  border-radius:12px;
+  background:radial-gradient(circle at 10% 20%,#ff2a6d,transparent 50%),radial-gradient(circle at 90% 80%,#05dda6,transparent 50%),radial-gradient(circle at 80% 10%,#ffc700,transparent 50%),radial-gradient(circle at 20% 90%,#9d4edd,transparent 50%);
+  background-size:200% 200%;
+  opacity:.35;
+  filter:drop-shadow(0 0 2px rgba(0,0,0,0));
+  transition:opacity .4s ease,filter .4s ease;
+  animation:organicFluid 6s ease-in-out infinite alternate;
+}
+#visualizerPage #eventGeneralFilter button[data-general="all_ac"]::after {
+  content:"";
+  position:absolute;
+  inset:1px;
+  z-index:-1;
+  background:var(--panel2);
+  border-radius:8px;
+  transition:background .4s ease;
+}
+#visualizerPage #eventGeneralFilter button[data-general="all_ac"]:hover::before {
+  opacity:1;
+  filter:drop-shadow(0 0 8px rgba(102,214,165,.85));
+}
+#visualizerPage #eventGeneralFilter button[data-general="all_ac"].selected::after {
+  background:#275a8d;
+}
+@keyframes organicFluid {
+  0% {
+    background-position:0% 0%;
+    filter:hue-rotate(0deg);
+  }
+  33% {
+    background-position:100% 40%;
+    filter:hue-rotate(110deg);
+  }
+  66% {
+    background-position:20% 100%;
+    filter:hue-rotate(220deg);
+  }
+  100% {
+    background-position:100% 100%;
+    filter:hue-rotate(360deg);
+  }
+}
+#visualizerPage .drop {
+  border:1px dashed #63718a;
+  border-radius:10px;
+  padding:13px;
+  color:var(--muted);
+  text-align:center;
+  min-width:240px;
+}
+#visualizerPage .drop.drag {
+  border-color:var(--accent);
+  background:#1b2d40;
+}
+#visualizerPage .file-list {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:9px;
+}
+#visualizerPage .file-chip {
+  background:var(--panel2);
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:.82rem;
+}
+#visualizerPage .settings {
+  display:flex;
+  gap:12px;
+  align-items:end;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+#visualizerPage .settings label {
+  min-width:155px;
+}
+#visualizerPage .settings .contest-field {
+  min-width:120px;
+}
+#visualizerPage .timeline-shell {
+  overflow-x:auto;
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#131823;
+  margin-top:12px;
+}
+#visualizerPage .timeline {
+  position:relative;
+  min-width:100%;
+  width:max-content;
+}
+#visualizerPage .ruler {
+  height:38px;
+  position:relative;
+  border-bottom:1px solid var(--line);
+  background:#171d28;
+}
+#visualizerPage .tick {
+  position:absolute;
+  top:7px;
+  color:var(--muted);
+  font-size:.76rem;
+  white-space:nowrap;
+  border-left:1px solid #586174;
+  height:30px;
+  padding-left:5px;
+}
+#visualizerPage .track {
+  height:118px;
+  position:relative;
+  border-bottom:1px solid var(--line);
+  background:#151b26;
+}
+#visualizerPage .track:last-of-type {
+  border-bottom:0;
+}
+#visualizerPage .track-label {
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:128px;
+  padding:10px 8px;
+  background:rgba(25,30,41,.96);
+  border-right:1px solid var(--line);
+  z-index:2;
+  display:flex;
+  align-items:center;
+  font-weight:600;
+  cursor:grab;
+  user-select:none;
+}
+#visualizerPage .track-label:active {
+  cursor:grabbing;
+}
+#visualizerPage .track-label.dragging {
+  opacity:.45;
+}
+#visualizerPage .track-label.drop-target {
+  outline:2px solid var(--accent);
+  outline-offset:-3px;
+}
+#visualizerPage .track-content {
+  position:absolute;
+  left:128px;
+  right:0;
+  top:0;
+  bottom:0;
+  background-image:linear-gradient(90deg,#151b26 0 50%,#1c2431 50% 100%);
+  background-size:var(--half-hour) 100%;
+  background-position:var(--pad) 0;
+}
+#visualizerPage .event {
+  position:absolute;
+  top:35px;
+  height:49px;
+  border:1px solid #eaf0ff;
+  border-radius:8px;
+  padding:4px 8px;
+  overflow:visible;
+  min-width:48px;
+  white-space:nowrap;
+  z-index:2;
+  cursor:pointer;
+}
+#visualizerPage .event strong {
+  font-size:.88rem;
+  color:#fff;
+  text-shadow:-1px -1px 2px #111,-1px 1px 2px #111,1px -1px 2px #111,1px 1px 2px #111;
+}
+#visualizerPage .event.same-topic,
+#visualizerPage .submission.same-topic {
+  z-index:20!important;
+}
+#visualizerPage .event:hover,
+#visualizerPage .event.hovered {
+  z-index:40!important;
+  transform:translateY(-3px);
+  box-shadow:0 5px 18px #000b;
+  outline:2px solid #fff;
+}
+#visualizerPage .submission.hovered {
+  z-index:50!important;
+}
+#visualizerPage .event:hover .event-note,
+#visualizerPage .event.hovered .event-note {
+  z-index:45;
+}
+#visualizerPage .event.deleted {
+  text-decoration:line-through;
+  opacity:.58;
+  filter:grayscale(.65);
+}
+#visualizerPage .event.dim,
+#visualizerPage .submission.dim {
+  opacity:.19;
+}
+#visualizerPage .event-note {
+  position:absolute;
+  left:0;
+  bottom:calc(100% + 1px);
+  max-width:220px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:.74rem;
+  color:#dbe4f4;
+  background:#111722e8;
+  border:1px solid #394254;
+  border-radius:5px;
+  padding:1px 4px;
+  z-index:4;
+}
+#visualizerPage .submission {
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:var(--problem);
+  z-index:3;
+}
+#visualizerPage .submission-card {
+  position:absolute;
+  top:3px;
+  left:5px;
+  background:#111722;
+  border:2px solid var(--verdict,#394254);
+  border-radius:6px;
+  padding:3px 6px;
+  min-width:118px;
+  max-width:205px;
+  font-size:.72rem;
+  line-height:1.25;
+  z-index:4;
+  white-space:normal;
+}
+#visualizerPage .submission-card a {
+  font-weight:700;
+  text-decoration:none;
+}
+#visualizerPage .submission-card a:hover {
+  text-decoration:underline;
+}
+#visualizerPage .submission-card .problem {
+  color:var(--problem);
+  font-weight:700;
+}
+#visualizerPage .verdict-accepted {
+  color:var(--good);
+}
+#visualizerPage .verdict-wrong {
+  color:var(--danger);
+}
+#visualizerPage .verdict-pending {
+  color:var(--warn);
+}
+#visualizerPage .legend {
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  font-size:.8rem;
+  color:var(--muted);
+}
+#visualizerPage .empty {
+  padding:24px;
+  text-align:center;
+  color:var(--muted);
+}
+#visualizerPage .status {
+  min-height:1.3em;
+  color:var(--muted);
+  font-size:.87rem;
+  margin-top:8px;
+}
+#visualizerPage .hidden {
+  display:none!important;
+}
+#visualizerPage .zoom-controls {
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+#visualizerPage .zoom-controls button {
+  min-width:38px;
+  padding:4px;
+}
+#visualizerPage .event-tooltip {
+  position:fixed;
+  z-index:1000;
+  display:none;
+  max-width:min(360px,calc(100vw - 24px));
+  padding:8px 10px;
+  border:2px solid var(--accent);
+  border-radius:6px;
+  background:#0c111b;
+  color:var(--text);
+  box-shadow:0 8px 24px #000b;
+  font-size:.82rem;
+  line-height:1.4;
+  white-space:normal;
+  pointer-events:none;
+}
+#visualizerPage .event-tooltip strong {
+  color:var(--accent);
+}
+@media(max-width:650px) {  #visualizerPage main {
+    padding:10px 8px 28px;
+  }
+  #visualizerPage section {
+    padding:10px;
+  }
+  #visualizerPage .problem-filter {
+    grid-template-columns:repeat(7,minmax(35px,1fr));
+  }
+  #visualizerPage .event-filter {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #visualizerPage .track-label {
+    width:100px;
+  }
+  #visualizerPage .track-content {
+    left:100px;
+  }
+}
   </style>
 </head>
 <body>
@@ -117,6 +594,31 @@
     <div class="hint" style="margin-top:8px">匯出包含已刪除事件。匯出不會清除本機資料。</div>
   </section>
 </main>
+
+<div id="visualizerPage">
+<main>
+  <header><h1>ICPC Contest Visualizer</h1><div class="muted">拖入三份隊員紀錄與 Codeforces 或 QOJ submissions JSON</div><div class="row page-actions"><button id="visualizerDownloadButton" type="button" class="page-tab page-download" title="下載 HTML 原始檔" aria-label="下載 HTML 原始檔"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button></div></header>
+  <section>
+    <div class="row">
+      <div id="drop" class="drop" tabindex="0">拖放 JSON 檔案到這裡<br>或 <button id="choose" type="button">開啟檔案視窗</button><input id="files" class="hidden" type="file" accept=".json,application/json" multiple></div><button id="reset" type="button">清除已載入檔案</button>
+      <div class="hint">三份 logger JSON + 一份 subs JSON。隊員名稱依檔名辨識，可重選檔案。</div>
+    </div>
+    <div id="fileList" class="file-list"></div>
+    <div class="settings">
+      <label class="contest-field">Contest ID<input id="contestId" inputmode="numeric" placeholder="自動辨識"></label>
+      <label>時間線起點<input id="rangeStart" type="datetime-local" step="1"></label>
+      <label>時間線終點<input id="rangeEnd" type="datetime-local" step="1"></label>
+      <label class="row" style="display:flex;align-items:center"><input id="showDeleted" type="checkbox">顯示已刪除事件</label>
+      <span id="rangeHint" class="hint"></span>
+    </div>
+    <div id="visualizerStatus" class="status" aria-live="polite">尚未載入資料</div>
+  </section>
+  <section class="toolbar"><h2>題目篩選</h2><div id="problemFilter" class="problem-filter"></div></section>
+  <section class="toolbar"><h2>事件篩選</h2><div id="eventFilter" class="event-filter"></div><div class="row" style="margin-top:10px"><span class="hint">通用：</span><div id="eventGeneralFilter" class="row"></div></div></section>
+  <section><div class="row" style="justify-content:space-between"><h2>比賽時間線</h2><div class="row"><div class="legend"><span>讀題淡 → 實作深 → 除錯最深</span><span>AC <b style="color:var(--good)">綠</b> · WA <b style="color:var(--danger)">紅</b> · 其他 <b style="color:var(--warn)">黃</b></span></div><div class="zoom-controls"><button id="zoomOut" type="button" title="縮小時間軸">−</button><span id="zoomLabel" class="hint"></span><button id="zoomIn" type="button" title="放大時間軸">+</button></div></div></div><div id="canvas" class="timeline-shell"><div class="empty">載入資料後顯示時間線</div></div></section>
+</main>
+<div id="eventTooltip" class="event-tooltip" role="tooltip"></div>
+</div>
 
 <div id="editorBackdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
   <form id="editor" class="modal">
@@ -694,10 +1196,87 @@
   });
   $('exportButton').addEventListener('click',exportData);
   $('downloadSelfButton').addEventListener('click',downloadSelf);
+  document.addEventListener('download-html', event => {
+    downloadSelf();
+    if (event.detail === 'visualizer') $('visualizerStatus').textContent = '已下載 index.html。';
+  });
   $('clearButton').addEventListener('click',()=>{if(confirm('確定要清空此裝置的所有事件嗎？')) if(confirm('此動作無法復原，仍要清空嗎？')) {state.events=[];persist();render();status('已清空所有本機紀錄。');}});
   window.onbeforeunload=()=>undefined;
   render(); status(state.events.length ? '已從本機還原紀錄。' : '準備開始記錄。');
 })();
+</script>
+<script>
+
+(() => {
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const COLORS=['#75b8ff','#66d6a5','#ff8893','#f4c86b','#c59cff','#53d6d0','#ff9f6e','#a9d46f','#ee8dd0','#83aaff','#d0b85a','#74c4ff','#b4a3ff','#ff789e','#66c6a1','#f5a6a6','#9dbd62','#d891ff','#6bd5f2','#f0a85a','#8fdb95','#ff7e73','#7cc1b3','#d8a0c1','#aab4c5','#f1d179'];
+ const LABELS={read_think:'讀題 + 想解',solved_discuss:'想出並討論解法',coding:'實作',debug:'除錯',custom_problem:'自訂',contest_start:'開始比賽',contest_end:'結束比賽',away:'中離',back:'回來',all_ac:'破台',custom_general:'自訂'};
+ // Zoom tuning: default/min/max pixels per hour, wheel/button multiplier, and whitespace at both ends.
+ const ZOOM={defaultPxPerHour:600,minPxPerHour:60,maxPxPerHour:2880,stepFactor:1.2,paddingMinutes:30};
+ const LEFT_GUTTER=128, DARK='#222a38';
+ let logs=[],subs=[],activeProblem=null,activeType=null,filesSeen=[],pxPerHour=ZOOM.defaultPxPerHour,trackOrder=[],draggedPerson=null,suppressCanvasClick=false;
+ const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const parseDate=v=>{const n=typeof v==='number'?v*1000:Date.parse(v);return Number.isFinite(n)?n:null};
+ function problemKey(raw){const s=String(raw??'').trim();if(!s||/^general$/i.test(s))return '*';const p=s.replace(/^p/i,'').toUpperCase();return /^[A-Z]$/.test(p)?p:'*';}
+ function problemIndex(p){return p==='*'?-1:p.charCodeAt(0)-65;}
+ function problemColor(p){return p==='*'?'#8490a3':COLORS[problemIndex(p)];}
+ function mixHex(from,to,amount){const a=[1,3,5].map(i=>parseInt(from.slice(i,i+2),16)),b=[1,3,5].map(i=>parseInt(to.slice(i,i+2),16));return '#'+a.map((v,i)=>Math.round(v*(1-amount)+b[i]*amount).toString(16).padStart(2,'0')).join('');}
+ function eventColor(problem,type){const base=problemColor(problem);if(type==='read_think')return mixHex(base,'#ffffff',.38);if(type==='solved_discuss')return mixHex(base,'#ffffff',.18);if(type==='coding')return base;if(type==='debug')return mixHex(base,DARK,.42);return mixHex(base,DARK,.25);}
+ function allEvents(){return logs.flatMap(l=>l.events.map(e=>({...e,_person:l.name})));}
+ function eventBounds(evts){const active=evts.filter(e=>!e.deleted);const starts=active.filter(e=>e.type==='contest_start').map(e=>parseDate(e.timestamp)).filter(x=>x!=null).sort((a,b)=>a-b);const ends=active.filter(e=>e.type==='contest_end').map(e=>parseDate(e.timestamp)).filter(x=>x!=null).sort((a,b)=>a-b);const times=active.map(e=>parseDate(e.timestamp)).filter(x=>x!=null);return {start:starts[0]??(times.length?Math.min(...times):null),end:ends.find(x=>x>=(starts[0]??-Infinity))??(times.length?Math.max(...times):null)};}
+ function localVal(ms){if(ms==null)return '';const d=new Date(ms),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;}
+ function fmtRel(ms,origin){let sec=Math.round((ms-origin)/1000),sign=sec<0?'-':'';sec=Math.abs(sec);return `${sign}${String(Math.floor(sec/3600)).padStart(2,'0')}:${String(Math.floor(sec%3600/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;}
+ function normalizeSubmission(s,contestId=null,startTimeSeconds=null){
+  if(!Array.isArray(s.cells))return {...s,contestId:s.contestId??contestId,creationTimeSeconds:s.creationTimeSeconds??(s.relativeTimeSeconds!=null&&startTimeSeconds!=null?Number(startTimeSeconds)+Number(s.relativeTimeSeconds):undefined)};
+  const cells=s.cells.map(v=>String(v??'').trim()),problemName=cells[1]||'',problemMatch=problemName.match(/^([A-Za-z][A-Za-z0-9]*)\s*[.．:：]/),rawVerdict=cells[3]||'',v=rawVerdict.toUpperCase();
+  let verdict=rawVerdict;
+  if(/^AC(?:CEPTED)?\b/.test(v))verdict='OK';
+  else if(/^WA\b|WRONG ANSWER/.test(v))verdict='WRONG_ANSWER';
+  else if(/^TL\b|TIME LIMIT/.test(v))verdict='TIME_LIMIT_EXCEEDED';
+  else if(/^ML\b|MEMORY LIMIT/.test(v))verdict='MEMORY_LIMIT_EXCEEDED';
+  else if(/^RE\b|RUNTIME ERROR/.test(v))verdict='RUNTIME_ERROR';
+  else if(/^PE\b|PRESENTATION ERROR/.test(v))verdict='PRESENTATION_ERROR';
+  else if(/^CE\b|COMPILE ERROR/.test(v))verdict='COMPILATION_ERROR';
+  const time=cells[7]||'',relative=time.match(/^(\d+):([0-5]\d):([0-5]\d)$/),relativeSeconds=relative?Number(relative[1])*3600+Number(relative[2])*60+Number(relative[3]):null;
+  const creationTimeSeconds=relativeSeconds!=null&&startTimeSeconds!=null?Number(startTimeSeconds)+relativeSeconds:undefined;
+  return {...s,contestId:s.contestId??contestId,problemIndex:problemMatch?.[1]?.toUpperCase()||problemName,verdict,creationTimeSeconds:creationTimeSeconds??s.creationTimeSeconds,creationTime:relative?undefined:time.replace(/\s+/, 'T'),qojProblemName:problemName};
+ }
+ const submissionItems=()=>subs.map(s=>({...s,_ms:s.creationTimeSeconds!=null?s.creationTimeSeconds*1000:parseDate(s.creationTime)})).filter(s=>s._ms!=null);
+ async function fileInput(list){for(const f of list){try{const d=JSON.parse(await f.text()),name=f.name.replace(/\.json$/i,'');if(Array.isArray(d)){subs.push(...d.map(s=>normalizeSubmission(s)));filesSeen.push({name,kind:'subs',count:d.length});continue;}if(Array.isArray(d.events)){logs.push({name,events:d.events,range:d.range||{}});filesSeen.push({name,kind:'log',count:d.events.length});continue;}if(Array.isArray(d.result)){subs.push(...d.result.map(s=>normalizeSubmission(s,d.contestId,d.startTimeSeconds)));filesSeen.push({name,kind:'subs',count:d.result.length});if(d.contestId!=null)$('contestId').value=d.contestId;if(d.startTimeSeconds!=null)window.cfStart=d.startTimeSeconds*1000;if(d.teamName)window.cfTeam=d.teamName;continue;}throw Error('不認得的 JSON 格式');}catch(e){$('visualizerStatus').textContent=`${f.name}：${e.message}`;}}refresh();$('visualizerStatus').textContent=`已載入 ${logs.length} 份隊員紀錄、${subs.length} 筆提交。`;}
+ function refresh(){ $('fileList').innerHTML=filesSeen.map(x=>`<span class="file-chip">${escape(x.name)} · ${x.kind==='log'?'隊員':'提交'} · ${x.count} 筆</span>`).join('');const b=eventBounds(allEvents()),times=submissionItems().map(s=>s._ms),firstSubmission=times.length?Math.min(...times):null,lastSubmission=times.length?Math.max(...times):null;if(!$('rangeStart').dataset.edited)$('rangeStart').value=localVal(b.start??window.cfStart??firstSubmission);if(!$('rangeEnd').dataset.edited)$('rangeEnd').value=localVal(b.end??lastSubmission);const s=subs.find(x=>x.contestId||x.problem?.contestId);if(!$('contestId').value)$('contestId').value=s?.contestId||s?.problem?.contestId||'';render();}
+ function timeValue(id){return parseDate($(id).value);}
+ function toggleProblem(p){activeProblem=activeProblem===p?null:p;render();}
+ function toggleType(type){activeType=activeType===type?null:type;render();}
+ function orderedLogs(){const names=logs.map(log=>log.name);trackOrder=[...trackOrder.filter(name=>names.includes(name)),...names.filter(name=>!trackOrder.includes(name))];return trackOrder.map(name=>logs.find(log=>log.name===name)).filter(Boolean).slice(0,3);}
+ function renderFilters(){const events=allEvents(),active=new Set();for(const e of events)active.add(problemKey(e.problem));for(const s of subs)if(s.problem?.index!=null)active.add(problemKey(s.problem.index));const hasData=events.length>0||subs.length>0,keys=['*',...Array.from({length:26},(_,i)=>String.fromCharCode(65+i))];$('problemFilter').innerHTML=keys.map(p=>{const disabled=!hasData||!active.has(p),label=p==='*'?'*':p;return `<button type="button" data-p="${p}" class="${activeProblem===p?'selected':''}" ${disabled?'disabled':''}>${label}</button>`;}).join('');const types=[['read_think',false],['solved_discuss',false],['coding',false],['debug',false],['submission',false],['custom_problem',false],['contest_start',true],['contest_end',true],['away',true],['back',true],['all_ac',true],['custom_general',true]],button=([type,general])=>{const available=type==='submission'?subs.length>0:events.some(e=>e.type===type);return `<button type="button" ${general?`data-general="${type}"`:''} data-type="${type}" class="${activeType===type?'selected':''}" ${available?'':'disabled'}>${type==='submission'?'提交':escape(LABELS[type])}</button>`;};$('eventFilter').innerHTML=types.filter(([,general])=>!general).map(button).join('');$('eventGeneralFilter').innerHTML=types.filter(([,general])=>general).map(button).join('');}
+ function render(){renderFilters();const start=timeValue('rangeStart'),end=timeValue('rangeEnd');if(start==null||end==null||end<=start){$('canvas').innerHTML='<div class="empty">請設定有效的時間線起點與終點。</div>';return;}
+  const hours=(end-start)/3600000,padPx=ZOOM.paddingMinutes/60*pxPerHour,width=Math.max(900,LEFT_GUTTER+2*padPx+hours*pxPerHour);document.documentElement.style.setProperty('--hour',pxPerHour+'px');$('zoomLabel').textContent=`${Math.round(pxPerHour)} px/小時`;$('zoomOut').disabled=pxPerHour<=ZOOM.minPxPerHour;$('zoomIn').disabled=pxPerHour>=ZOOM.maxPxPerHour;$('rangeHint').textContent=`比賽相對時間 · 前後各留 ${ZOOM.paddingMinutes} 分鐘空間`;
+  const events=allEvents().filter(e=>e.timestamp&&(!e.deleted||$('showDeleted').checked)).sort((a,b)=>parseDate(a.timestamp)-parseDate(b.timestamp));const subItems=submissionItems().filter(s=>s._ms>=start&&s._ms<=end).sort((a,b)=>a._ms-b._ms);
+  const tickStep=hours<=2?15:hours<=6?30:hours<=12?60:hours<=36?120:360;let ticks='';for(let m=0;m<=hours*60;m+=tickStep){const x=LEFT_GUTTER+padPx+m/60*pxPerHour;ticks+=`<div class="tick" style="left:${x}px">${fmtRel(start+m*60000,start)}</div>`;}
+  let tracks='';for(const log of orderedLogs()){const own=events.filter(e=>e._person===log.name).sort((a,b)=>parseDate(a.timestamp)-parseDate(b.timestamp));let cards='';for(let i=0;i<own.length;i++){const e=own[i],t=parseDate(e.timestamp),next=i+1<own.length?parseDate(own[i+1].timestamp):end,p=problemKey(e.problem),left=Math.max(0,padPx+(t-start)/3600000*pxPerHour),right=Math.min(width-LEFT_GUTTER,Math.max(left+48,padPx+(next-start)/3600000*pxPerHour)),dim=(activeProblem&&p!==activeProblem)||(activeType&&e.type!==activeType)?' dim':'',duration=Math.max(0,next-t);cards+=`<div class="event${e.deleted?' deleted':''}${dim}" data-problem="${p}" data-event-type="${escape(e.type||'unknown')}" data-type="${escape(LABELS[e.type]||e.type||'事件')}" data-person="${escape(log.name)}" data-start="${t}" data-end="${next}" data-duration="${duration}" data-note="${escape(e.note||'')}" style="left:${left}px;width:${Math.max(48,right-left)}px;background:${eventColor(p,e.type)}"><strong>${p} · ${escape(LABELS[e.type]||e.type||'事件')}</strong>${e.note?`<span class="event-note">${escape(e.note)}</span>`:''}</div>`;}tracks+=`<div class="track"><div class="track-label" draggable="true" data-person="${escape(log.name)}" title="拖曳以調整隊員順序">${escape(log.name)}</div><div class="track-content" style="--half-hour:${pxPerHour/2}px;--pad:${padPx}px">${cards}</div></div>`;}
+  let sublines='';const occurrences={};for(const s of subItems){const p=problemKey(s.problem?.index||s.problemIndex),time=s._ms,x=LEFT_GUTTER+padPx+(time-start)/3600000*pxPerHour,key=Math.round(x/24),stack=occurrences[key]||0;occurrences[key]=stack+1;const v=String(s.verdict||'PENDING'),vclass=v==='OK'?'verdict-accepted':/WRONG|FAILED|RUNTIME|TIME_LIMIT|MEMORY_LIMIT|PRESENTATION|COMPILATION/i.test(v)?'verdict-wrong':'verdict-pending',vcolor=vclass==='verdict-accepted'?'#66d6a5':vclass==='verdict-wrong'?'#ff8893':'#f4c86b',id=s.id,contest=$('contestId').value||s.contestId||s.problem?.contestId,url=s.url||`https://codeforces.com/gym/${encodeURIComponent(contest)}/submission/${encodeURIComponent(id)}`,lang=s.programmingLanguage||'',relative=fmtRel(time,start);sublines+=`<div class="submission${(activeProblem&&p!==activeProblem)||(activeType&&activeType!=='submission')?' dim':''}" data-problem="${p}" data-kind="submission" data-time="${relative}" data-language="${escape(lang)}" data-verdict="${escape(v)}" style="left:${x}px;--problem:${problemColor(p)}"><div class="submission-card" style="top:${3+(stack%4)*27}px;--verdict:${vcolor}"><span class="problem">${escape(p)}</span> · ${escape(relative)}${lang?`<br>${escape(lang)}`:''}<br><a class="${vclass}" href="${escape(url)}" target="_blank" rel="noopener">${escape(v)}</a></div></div>`;}
+  $('canvas').innerHTML=`<div class="timeline" style="width:${width}px"><div class="ruler">${ticks}</div>${tracks||'<div class="empty">請載入三份隊員事件 JSON</div>'}${sublines}</div>`;
+ }
+ function setZoom(next,anchorX){const old=pxPerHour,newZoom=Math.max(ZOOM.minPxPerHour,Math.min(ZOOM.maxPxPerHour,next));if(old===newZoom)return;const shell=$('canvas'),localX=anchorX??shell.clientWidth/2,worldX=shell.scrollLeft+localX,oldOrigin=LEFT_GUTTER+ZOOM.paddingMinutes/60*old,offsetHours=(worldX-oldOrigin)/old;pxPerHour=newZoom;render();const newOrigin=LEFT_GUTTER+ZOOM.paddingMinutes/60*newZoom;shell.scrollLeft=newOrigin+offsetHours*newZoom-localX;}
+ $('visualizerDownloadButton').addEventListener('click',()=>document.dispatchEvent(new CustomEvent('download-html', {detail:'visualizer'})));
+ $('choose').addEventListener('click',()=>$('files').click());$('files').addEventListener('change',e=>fileInput(e.target.files));$('reset').addEventListener('click',()=>{logs=[];subs=[];filesSeen=[];activeType=null;window.cfStart=null;window.cfTeam=null;activeProblem=null;pxPerHour=ZOOM.defaultPxPerHour;$('files').value='';$('contestId').value='';$('rangeStart').dataset.edited='';$('rangeEnd').dataset.edited='';$('visualizerStatus').textContent='已清除載入資料';refresh()});const drop=$('drop');drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');fileInput(e.dataTransfer.files)});
+ $('problemFilter').addEventListener('click',e=>{const p=e.target.dataset.p;if(p&&!e.target.disabled)toggleProblem(p);});for(const id of ['eventFilter','eventGeneralFilter'])$(id).addEventListener('click',e=>{const type=e.target.dataset.type;if(type)toggleType(type);});
+ $('canvas').addEventListener('click',e=>{if(suppressCanvasClick){suppressCanvasClick=false;return;}const node=e.target.closest('.event');if(node)toggleProblem(node.dataset.problem);else if(activeProblem){activeProblem=null;render();}});
+ function placeTooltip(e){const tip=$('eventTooltip'),gap=14;let x=e.clientX+gap,y=e.clientY+gap;const rect=tip.getBoundingClientRect();if(x+rect.width>innerWidth-8)x=e.clientX-rect.width-gap;if(y+rect.height>innerHeight-8)y=e.clientY-rect.height-gap;tip.style.left=`${Math.max(8,x)}px`;tip.style.top=`${Math.max(8,y)}px`;}
+ function hoverTarget(target){const event=target.closest?.('.event');if(event)return event;const card=target.closest?.('.submission-card');return card?.closest('.submission')||null;}
+ function clearHover(){document.querySelectorAll('.event.same-topic,.event.hovered,.submission.same-topic,.submission.hovered').forEach(el=>el.classList.remove('same-topic','hovered'));const tip=$('eventTooltip');tip.style.borderColor='var(--accent)';tip.querySelector('strong')?.style.removeProperty('color');tip.style.display='none';}
+ $('canvas').addEventListener('pointerover',e=>{const node=hoverTarget(e.target);if(!node)return;clearHover();const p=node.dataset.problem;document.querySelectorAll(`.event[data-problem="${p}"],.submission[data-problem="${p}"]`).forEach(el=>el.classList.add('same-topic'));node.classList.add('hovered');if(node.dataset.kind==='submission'){const verdict=node.dataset.verdict,vclass=verdict==='OK'?'verdict-accepted':/WRONG|FAILED|RUNTIME|TIME_LIMIT|MEMORY_LIMIT|PRESENTATION|COMPILATION/i.test(verdict)?'verdict-wrong':'verdict-pending',vcolor=vclass==='verdict-accepted'?'#66d6a5':vclass==='verdict-wrong'?'#ff8893':'#f4c86b',tip=$('eventTooltip');tip.innerHTML=`<strong>${escape(p)} · Submission</strong><br>時間：${escape(node.dataset.time)}<br>語言：${escape(node.dataset.language)}<br>Verdict：${escape(verdict)}`;tip.style.borderColor=vcolor;tip.querySelector('strong').style.color=problemColor(p);}else{const note=node.dataset.note,mins=(Number(node.dataset.duration)/60000).toFixed(1);$('eventTooltip').innerHTML=`<strong>${escape(node.dataset.person)} · ${escape(p)} · ${escape(node.dataset.type)}</strong><br>持續時間：${mins} 分鐘${note?`<br>詳細資料：${escape(note)}`:''}`;}$('eventTooltip').style.display='block';placeTooltip(e);});
+ $('canvas').addEventListener('pointermove',e=>{if($('eventTooltip').style.display!=='block')return;placeTooltip(e);});
+ $('canvas').addEventListener('pointerout',e=>{const node=hoverTarget(e.target);if(node&&!node.contains(e.relatedTarget))clearHover();});
+ $('canvas').addEventListener('dragstart',e=>{const label=e.target.closest('.track-label');if(!label)return;draggedPerson=label.dataset.person;label.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggedPerson);});
+ $('canvas').addEventListener('dragend',e=>{const label=e.target.closest('.track-label');if(label)label.classList.remove('dragging');draggedPerson=null;document.querySelectorAll('.track-label.drop-target').forEach(el=>el.classList.remove('drop-target'));});
+ $('canvas').addEventListener('dragover',e=>{const target=e.target.closest('.track-label');if(!target||!draggedPerson)return;e.preventDefault();document.querySelectorAll('.track-label.drop-target').forEach(el=>el.classList.remove('drop-target'));target.classList.add('drop-target');e.dataTransfer.dropEffect='move';});
+ $('canvas').addEventListener('drop',e=>{const target=e.target.closest('.track-label');if(!target||!draggedPerson)return;e.preventDefault();suppressCanvasClick=true;const targetPerson=target.dataset.person,from=trackOrder.indexOf(draggedPerson),to=trackOrder.indexOf(targetPerson);if(from>=0&&to>=0&&from!==to){trackOrder.splice(from,1);trackOrder.splice(to,0,draggedPerson);render();}draggedPerson=null;});
+ $('showDeleted').addEventListener('change',render);$('rangeStart').addEventListener('input',e=>{e.target.dataset.edited='1';render()});$('rangeEnd').addEventListener('input',e=>{e.target.dataset.edited='1';render()});$('contestId').addEventListener('input',render);$('zoomIn').addEventListener('click',()=>setZoom(pxPerHour*ZOOM.stepFactor));$('zoomOut').addEventListener('click',()=>setZoom(pxPerHour/ZOOM.stepFactor));$('canvas').addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();const rect=$('canvas').getBoundingClientRect(),anchor=e.clientX-rect.left;setZoom(pxPerHour*(e.deltaY<0?ZOOM.stepFactor:1/ZOOM.stepFactor),anchor);},{passive:false});
+ renderFilters();
+})();
+
 </script>
 </body>
 </html>
