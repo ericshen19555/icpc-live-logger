@@ -1,13 +1,61 @@
 import argparse
+import getpass
+import hashlib
 import json
+import os
+import secrets
+import time
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlencode
 
 import requests
 
 BASE_DIR = Path(__file__).resolve().parent
 API = "https://codeforces.com/api"
 LAST_TEAM_FILE = BASE_DIR / ".cf_last_team"
+CREDENTIALS_FILE = BASE_DIR / ".cf_api_credentials.json"
+API_CALL_INTERVAL = 2.1
+_last_api_call = 0.0
+
+
+class CodeforcesAPIError(RuntimeError):
+    pass
+
+
+def load_credentials():
+    if CREDENTIALS_FILE.exists():
+        try:
+            data = json.loads(CREDENTIALS_FILE.read_text(encoding="utf-8"))
+            entries = data if isinstance(data, list) else [data]
+            return [
+                {"key": item["key"], "secret": item["secret"]}
+                for item in entries
+                if isinstance(item, dict) and item.get("key") and item.get("secret")
+            ]
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+    return []
+
+
+def save_credentials(credentials):
+    CREDENTIALS_FILE.write_text(
+        json.dumps(credentials, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    try:
+        os.chmod(CREDENTIALS_FILE, 0o600)
+    except OSError:
+        pass
+
+
+def signed_params(method, params, credentials):
+    values = {**params, "apiKey": credentials["key"], "time": str(int(time.time()))}
+    canonical = urlencode(sorted(values.items()))
+    rand = f"{secrets.randbelow(1_000_000):06d}"
+    digest = hashlib.sha512(
+        f"{rand}/{method}?{canonical}#{credentials['secret']}".encode("utf-8")
+    ).hexdigest()
+    return {**values, "apiSig": rand + digest}
 
 
 def load_last_team_name():
@@ -18,17 +66,52 @@ def load_last_team_name():
     return team_name or None
 
 
-def api_result(method, **params):
-    response = requests.get(f"{API}/{method}", params=params, timeout=30)
+def api_result(method, credentials=None, **params):
+    global _last_api_call
+    delay = API_CALL_INTERVAL - (time.monotonic() - _last_api_call)
+    if delay > 0:
+        time.sleep(delay)
+    request_params = signed_params(method, params, credentials) if credentials else params
+    response = requests.get(f"{API}/{method}", params=request_params, timeout=30)
+    _last_api_call = time.monotonic()
     response.raise_for_status()
     payload = response.json()
     if payload.get("status") != "OK":
-        raise RuntimeError(payload.get("comment", f"Codeforces API {method} failed"))
+        raise CodeforcesAPIError(payload.get("comment", f"Codeforces API {method} failed"))
     return payload["result"]
 
 
-def download_submissions(contest_id):
-    return api_result("contest.status", contestId=contest_id, **{"from": 1, "count": 10000})
+def download_submissions(contest_id, credentials):
+    return api_result("contest.status", credentials, contestId=contest_id, **{"from": 1, "count": 10000})
+
+
+def authenticated_submissions(contest_id):
+    credentials_list = load_credentials()
+    while True:
+        last_error = None
+        for credentials in credentials_list:
+            try:
+                return download_submissions(contest_id, credentials)
+            except CodeforcesAPIError as error:
+                last_error = error
+        if last_error:
+            print(f"已儲存的 Codeforces API 憑證都無法讀取此 Gym：{last_error}")
+        print("請輸入可查看此 private gym 的 Codeforces API key/secret；按 Enter 可取消。")
+        key = input("API key: ").strip()
+        if not key:
+            raise RuntimeError("未提供可用的 Codeforces API 憑證。")
+        secret = getpass.getpass("API secret: ").strip()
+        if not secret:
+            print("API secret 不能空白，請重新輸入。")
+            continue
+        credential = {"key": key, "secret": secret}
+        if not any(item["key"] == key and item["secret"] == secret for item in credentials_list):
+            credentials_list.append(credential)
+            save_credentials(credentials_list)
+        try:
+            return download_submissions(contest_id, credential)
+        except CodeforcesAPIError as error:
+            print(f"這組 API 憑證無法讀取此 Gym：{error}")
 
 
 def get_team_start_time(submissions):
@@ -42,7 +125,7 @@ def get_team_start_time(submissions):
 
 
 def write_team_submissions(contest_id, team_name):
-    all_submissions = download_submissions(contest_id)
+    all_submissions = authenticated_submissions(contest_id)
     team_submissions = [
         item for item in all_submissions
         if item.get("author", {}).get("teamName") == team_name

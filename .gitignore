@@ -11,4 +11,5 @@ Desktop.ini
 
 logs/
 .qoj_credentials.json
+.cf_api_credentials.json
 .cf_last_team

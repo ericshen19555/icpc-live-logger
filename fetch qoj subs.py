@@ -77,27 +77,87 @@ class PageParser(HTMLParser):
 
 
 def load_credentials():
+    credentials_list = []
     if CREDENTIALS_FILE.exists():
         try:
-            credentials = json.loads(CREDENTIALS_FILE.read_text(encoding="utf-8"))
-            username, password = credentials["username"], credentials["password"]
-            if username and password:
-                return {"username": username, "password": password}
+            data = json.loads(CREDENTIALS_FILE.read_text(encoding="utf-8"))
+            entries = data if isinstance(data, list) else [data]
+            credentials_list = [
+                {"username": item["username"], "password": item["password"]}
+                for item in entries
+                if isinstance(item, dict) and item.get("username") and item.get("password")
+            ]
         except (OSError, ValueError, KeyError, TypeError):
             pass
+    return credentials_list
 
-    print("找不到可用的 QOJ 帳號密碼設定，請輸入一次以儲存到本機設定檔。")
-    username = input("QOJ username: ").strip()
-    password = getpass.getpass("QOJ password: ")
-    if not username or not password:
-        raise ValueError("QOJ username 和 password 都不能空白")
-    credentials = {"username": username, "password": password}
-    CREDENTIALS_FILE.write_text(json.dumps(credentials, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+def save_credentials(credentials_list):
+    CREDENTIALS_FILE.write_text(
+        json.dumps(credentials_list, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     try:
         os.chmod(CREDENTIALS_FILE, 0o600)
     except OSError:
         pass
-    return credentials
+
+
+class InvalidCredentials(RuntimeError):
+    pass
+
+
+def prompt_credentials():
+    print("請輸入 QOJ 帳號密碼；username 留空可取消。")
+    username = input("QOJ username: ").strip()
+    if not username:
+        raise RuntimeError("未提供可用的 QOJ 憑證。")
+    password = getpass.getpass("QOJ password: ")
+    if not password:
+        print("QOJ password 不能空白，請重新輸入。")
+        return None
+    return {"username": username, "password": password}
+
+
+def new_session():
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    })
+    return session
+
+
+def authenticated_session():
+    credentials_list = load_credentials()
+    while True:
+        last_error = None
+        for credentials in credentials_list:
+            session = new_session()
+            try:
+                login(session, credentials)
+                return session, credentials
+            except InvalidCredentials as error:
+                last_error = error
+        if last_error:
+            print(f"已儲存的 QOJ 帳號都無法登入：{last_error}")
+        credentials = prompt_credentials()
+        if credentials is None:
+            continue
+        if not any(
+            item["username"] == credentials["username"] and item["password"] == credentials["password"]
+            for item in credentials_list
+        ):
+            credentials_list.append(credentials)
+            save_credentials(credentials_list)
+        session = new_session()
+        try:
+            login(session, credentials)
+            return session, credentials
+        except InvalidCredentials as error:
+            print(f"這組 QOJ 帳號密碼無法登入：{error}")
 
 
 def login(session, credentials):
@@ -136,7 +196,7 @@ def login(session, credentials):
         raise RuntimeError("QOJ 回傳 Cloudflare 驗證頁，無法確認登入狀態。")
     if response.text.strip() != "ok":
         if response.text.strip() == "failed":
-            raise RuntimeError("QOJ 登入失敗，請確認設定檔中的帳號密碼。")
+            raise InvalidCredentials("帳號密碼錯誤。")
         raise RuntimeError(
             f"QOJ AJAX 登入未成功：HTTP {response.status_code}，"
             f"回應 {response.text.strip()[:120]!r}。"
@@ -149,7 +209,7 @@ def login(session, credentials):
     if "Just a moment" in home.text and "challenge-platform" in home.text:
         raise RuntimeError("QOJ 回傳 Cloudflare 驗證頁，無法確認登入狀態。")
     if not re.search(r"href=['\"][^'\"]*/logout(?:['\"/?#])", home.text, re.IGNORECASE):
-        raise RuntimeError(
+        raise InvalidCredentials(
             f"QOJ AJAX 登入回應為 HTTP {response.status_code}，但首頁未顯示已登入狀態。"
         )
 
@@ -328,18 +388,8 @@ def download_submissions(contest_id, session):
 
 
 def write_team_submissions(contest_id, team_name=None):
-    credentials = load_credentials()
+    session, credentials = authenticated_session()
     team_name = team_name or credentials["username"]
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/131.0.0.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    })
-    login(session, credentials)
     if credentials["username"].casefold() != team_name.casefold():
         raise ValueError(
             f"輸出隊伍帳號 {team_name!r} 與登入帳號 {credentials['username']!r} 不同；"
